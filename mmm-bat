@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# mmm-bat.sh v0.2, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
+# mmm-bat.sh comes with ABSOLUTELY NO WARRANTY; for details
+# type LICENSE file.  This is free software, and you are welcome
+# to redistribute it under certain conditions; type LICENSE
+# for details.
+# If the LICENSE file does not exist,
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+. build/envsetup.sh
+. mmm-bat.sh
+
+#
+# functions
+#
+function helpUsage() {
+  echo "Usage:"
+  echo "    $0 [dir] [product name] [-a]?"
+  echo "    - dir: path for build"
+  echo "           e.g) hardware/qcom/camera"
+  echo "    - product name: ???"
+  echo ""
+  echo "  Optional:"
+  echo "    - append mode(-a): To accumulate a push list."
+}
+
+#
+# init
+#
+path=$1
+product_name=$2
+is_accumulation_mode=$3
+
+build_log_file="mmm.log"
+script_file="push.bat"
+
+#
+# main
+#
+is_valid=$(checkParams ${path} ${product_name})
+if [ ${is_valid} == "INVALID" ]; then
+  helpUsage
+  exit -1
+fi
+
+# log header
+writeLog "---------------------------------------------------------------------"
+writeLog "Date: $(date)"
+writeLog "Product: ${product_name}"
+writeLog "Path: ${path}"
+
+# build & generate push script
+if [ -z "${is_accumulation_mode}" ]; then
+  build ${path} ${product_name} ${build_log_file} ${script_file}
+else
+  build ${path} ${product_name} ${build_log_file} ${script_file} ${script_file}
+fi
