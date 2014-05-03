@@ -13,6 +13,15 @@
 . test-mmm-bat.inc
 . mmm-bat.sh
 
+function oneTimeSetUp() {
+  mkdir -p build
+  touch build/envsetup.sh
+}
+
+function oneTimeTearDown() {
+  rm -rf build
+}
+
 function testIfThereAreNotEnoughParms() {
   # set up
   local dir=`pwd`

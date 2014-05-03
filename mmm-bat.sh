@@ -115,6 +115,7 @@ function build_command() {
   local product_name=$2
   local log_file=$3
 
+  source build/envsetup.sh
   lunch ${product_name}
   mmm ${path} 2>&1 | tee ${log_file}
 }
