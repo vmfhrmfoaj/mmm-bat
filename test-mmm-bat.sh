@@ -349,5 +349,36 @@ function testBuildWithAppendMode() {
   rm -rf ${append_file}
 }
 
+function testCustomBuild() {
+  # set up
+  local log_file='temp-log-file'
+  local push_file='temp-push-script'
+  local check_param_file='temp-check-param'
+
+  echo "echo \$1 > ${check_param_file}" > ${custom_build_command}
+  echo "echo \"${install_log}\"" >> ${custom_build_command}
+
+  # exercise
+  build . 'custom' ${log_file} ${push_file} > /dev/null
+
+  # verify
+  local push_script=$(cat ${push_file})
+  local diff=$(diff -c <(echo "${push_script_for_install_log}" ) \
+                       <(echo "${push_script}"))
+
+  assertTrue "${diff}" \
+    "[ \"${push_script_for_install_log}\" == \"${push_script}\" ]"
+
+  local diff=$(diff -c <(echo ".") "${check_param_file}")
+  assertTrue "${diff}" \
+    "[ \".\" == \"$(cat ${check_param_file})\" ]"
+
+  # tear down
+  rm -rf ${log_file}
+  rm -rf ${push_file}
+  rm -rf ${custom_build_command}
+  rm -rf ${check_param_file}
+}
+
 # run test
 . shUnit2/src/shunit2

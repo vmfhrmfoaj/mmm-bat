@@ -18,6 +18,7 @@ push_regx="adb push|adb shell chmod"
 
 error_script_file="error.bat"
 push_log_file="push.log"
+custom_build_command='mmm-bat-custom.sh'
 
 function checkParams() {
   if [ $# -lt 2 ] || [ ! -d $1 ]; then
@@ -113,11 +114,10 @@ function removeScriptFileIfEmpty() {
 function build_command() {
   local path=$1
   local product_name=$2
-  local log_file=$3
 
   source build/envsetup.sh
   lunch ${product_name}
-  mmm ${path} 2>&1 | tee ${log_file}
+  mmm ${path}
 }
 
 function build_internal() {
@@ -126,7 +126,12 @@ function build_internal() {
   local log_file=$3
   local push_file=$4
 
-  build_command ${path} ${product_name} ${log_file}
+  if [ ${product_name} == "custom" ]; then
+    bash ${custom_build_command} ${path}  2>&1 | tee ${log_file}
+  else
+    build_command ${path} ${product_name} 2>&1 | tee ${log_file}
+  fi
+
   genPushScript ${log_file} > ${push_file}
   if [ -f ${error_script_file} ]; then
     local temp_file=".temp-$(date +"%N").bat"

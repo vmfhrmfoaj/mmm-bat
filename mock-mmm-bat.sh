@@ -19,6 +19,5 @@ function writeLog() {
 function build_command() {
   local path=$1
   local product_name=$2
-  local log_file=$3
-  echo ${mock_build_command_log} > ${log_file}
+  echo ${mock_build_command_log}
 }
