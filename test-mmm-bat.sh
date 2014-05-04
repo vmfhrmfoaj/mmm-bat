@@ -14,6 +14,15 @@
 . mmm-bat.sh
 . mock-mmm-bat.sh
 
+function oneTimeSetUp() {
+  mkdir -p build
+  touch build/envsetup.sh
+}
+
+function oneTimeTearDown() {
+  rm -rf build
+}
+
 function testIfThereAreNotEnoughParms() {
   # set up
   local dir=`pwd`
@@ -257,7 +266,7 @@ function testBuild() {
   # set up
   local log_file='temp-log-file'
   local push_file='temp-push-script'
-  mock_build_command_log=${install_log}
+  mmm_log=${install_log}
 
   # exercise
   build . 'test' ${log_file} ${push_file} > /dev/null
@@ -279,7 +288,7 @@ function testBuildWithError() {
   # set up
   local log_file='temp-error-log-file'
   local push_file='temp-push-script-for-error'
-  mock_build_command_log=${error_log}
+  mmm_log=${error_log}
 
   # exercise
   build . 'test' ${log_file} ${push_file} > /dev/null
@@ -304,7 +313,7 @@ function testBuildAfterError() {
   # set up
   local log_file='temp-log-file'
   local push_file='temp-push-script'
-  mock_build_command_log=${install_log}
+  mmm_log=${install_log}
 
   echo "${push_script_for_error_log}" > ${error_script_file}
 
@@ -331,7 +340,7 @@ function testBuildWithAppendMode() {
   local log_file='temp-log-file'
   local push_file='temp-push-script'
   local append_file='temp-push-spcript'
-  mock_build_command_log=${install_log}
+  mmm_log=${install_log}
 
   echo "${push_script_for_no_error_log}" > ${append_file}
 
