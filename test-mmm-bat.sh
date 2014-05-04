@@ -12,15 +12,7 @@
 
 . test-mmm-bat.inc
 . mmm-bat.sh
-
-function oneTimeSetUp() {
-  mkdir -p build
-  touch build/envsetup.sh
-}
-
-function oneTimeTearDown() {
-  rm -rf build
-}
+. mock-mmm-bat.sh
 
 function testIfThereAreNotEnoughParms() {
   # set up
@@ -136,9 +128,9 @@ function testJoinPushScript() {
 
 function testJoinPushScriptWithFiles_1() {
   # set up
-  input_1="temp_1"
-  input_2="temp_2"
-  output="temp_1"
+  local input_1="temp_1"
+  local input_2="temp_2"
+  local output="temp_1"
 
   echo "${push_script_for_install_log}" > ${input_1}
   echo "${push_script_for_no_error_log}" > ${input_2}
@@ -159,9 +151,9 @@ function testJoinPushScriptWithFiles_1() {
 
 function testJoinPushScriptWithFiles_2() {
   # set up
-  input_1="temp_1"
-  input_2="temp_2"
-  output="temp_2"
+  local input_1="temp_1"
+  local input_2="temp_2"
+  local output="temp_2"
 
   echo "${push_script_for_install_log}" > ${input_1}
   echo "${push_script_for_no_error_log}" > ${input_2}
@@ -261,35 +253,11 @@ function testShowInstallMessage() {
   rm -rf ${temp_error_log_file}
 }
 
-# mock lunch
-function lunch() {
-  echo -n
-}
-
-# mock writeLog
-function writeLog() {
-  echo -n
-}
-
 function testBuild() {
-  # mock mmm
-  function mmm() {
-    echo "${install_log}"
-  }
-
-  # mock showInstalled
-  function showInstalled() {
-    echo -n
-  }
-
-  # mock showError
-  function showError() {
-    echo -n
-  }
-
   # set up
-  log_file='temp-log-file'
-  push_file='temp-push-script'
+  local log_file='temp-log-file'
+  local push_file='temp-push-script'
+  mock_build_command_log=${install_log}
 
   # exercise
   build . 'test' ${log_file} ${push_file} > /dev/null
@@ -308,24 +276,10 @@ function testBuild() {
 }
 
 function testBuildWithError() {
-  # mock mmm
-  function mmm() {
-    echo "${error_log}"
-  }
-
-  # mock showInstalled
-  function showInstalled() {
-    echo -n
-  }
-
-  # mock showError
-  function showError() {
-    echo -n
-  }
-
   # set up
-  log_file='temp-error-log-file'
-  push_file='temp-push-script-for-error'
+  local log_file='temp-error-log-file'
+  local push_file='temp-push-script-for-error'
+  mock_build_command_log=${error_log}
 
   # exercise
   build . 'test' ${log_file} ${push_file} > /dev/null
@@ -347,24 +301,10 @@ function testBuildWithError() {
 }
 
 function testBuildAfterError() {
-  # mock mmm
-  function mmm() {
-    echo "${install_log}"
-  }
-
-  # mock showInstalled
-  function showInstalled() {
-    echo -n
-  }
-
-  # mock showError
-  function showError() {
-    echo -n
-  }
-
   # set up
-  log_file='temp-log-file'
-  push_file='temp-push-script'
+  local log_file='temp-log-file'
+  local push_file='temp-push-script'
+  mock_build_command_log=${install_log}
 
   echo "${push_script_for_error_log}" > ${error_script_file}
 
@@ -387,25 +327,11 @@ function testBuildAfterError() {
 }
 
 function testBuildWithAppendMode() {
-  # mock mmm
-  function mmm() {
-    echo "${install_log}"
-  }
-
-  # mock showInstalled
-  function showInstalled() {
-    echo -n
-  }
-
-  # mock showError
-  function showError() {
-    echo -n
-  }
-
   # set up
   local log_file='temp-log-file'
   local push_file='temp-push-script'
   local append_file='temp-push-spcript'
+  mock_build_command_log=${install_log}
 
   echo "${push_script_for_no_error_log}" > ${append_file}
 
