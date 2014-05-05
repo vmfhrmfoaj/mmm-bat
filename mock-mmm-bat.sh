@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# mock-mmm-bat.sh v0.2, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
+# mock-mmm-bat.sh v0.3.4 Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
 # mock-mmm-bat.sh comes with ABSOLUTELY NO WARRANTY; for details
 # type LICENSE file.  This is free software, and you are welcome
 # to redistribute it under certain conditions; type LICENSE
