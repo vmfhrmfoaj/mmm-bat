@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# mmm-bat.sh v0.2, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
-# mmm-bat.sh comes with ABSOLUTELY NO WARRANTY; for details
+# mmm-bat v0.2, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
+# mmm-bat comes with ABSOLUTELY NO WARRANTY; for details
 # type LICENSE file.  This is free software, and you are welcome
 # to redistribute it under certain conditions; type LICENSE
 # for details.
@@ -10,21 +10,22 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-. build/envsetup.sh
 . mmm-bat.sh
 
 #
 # functions
 #
 function helpUsage() {
-  echo "Usage:"
-  echo "    $0 [dir] [product name] [-a]?"
-  echo "    - dir: path for build"
-  echo "           e.g) hardware/qcom/camera"
-  echo "    - product name: ???"
-  echo ""
-  echo "  Optional:"
-  echo "    - append mode(-a): To accumulate a push list."
+  echo    "Usage:"
+  echo    "    $0 [dir] [product name] [-a]?"
+  echo    "    - dir: path for build"
+  echo    "           e.g) hardware/qcom/camera"
+  echo    "    - product name: product string for mmm-build."
+  echo -n "                    If the product name is \"custom\", "
+  echo                        "we to execute the \"mmm-bat-custom.sh\" file."
+  echo    ""
+  echo    "  Optional:"
+  echo    "    - append mode(-a): To accumulate a push list."
 }
 
 #

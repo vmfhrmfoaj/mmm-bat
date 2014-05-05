@@ -12,6 +12,16 @@
 
 . test-mmm-bat.inc
 . mmm-bat.sh
+. mock-mmm-bat.sh
+
+function oneTimeSetUp() {
+  mkdir -p build
+  touch build/envsetup.sh
+}
+
+function oneTimeTearDown() {
+  rm -rf build
+}
 
 function testIfThereAreNotEnoughParms() {
   # set up
@@ -127,9 +137,9 @@ function testJoinPushScript() {
 
 function testJoinPushScriptWithFiles_1() {
   # set up
-  input_1="temp_1"
-  input_2="temp_2"
-  output="temp_1"
+  local input_1="temp_1"
+  local input_2="temp_2"
+  local output="temp_1"
 
   echo "${push_script_for_install_log}" > ${input_1}
   echo "${push_script_for_no_error_log}" > ${input_2}
@@ -150,9 +160,9 @@ function testJoinPushScriptWithFiles_1() {
 
 function testJoinPushScriptWithFiles_2() {
   # set up
-  input_1="temp_1"
-  input_2="temp_2"
-  output="temp_2"
+  local input_1="temp_1"
+  local input_2="temp_2"
+  local output="temp_2"
 
   echo "${push_script_for_install_log}" > ${input_1}
   echo "${push_script_for_no_error_log}" > ${input_2}
@@ -252,35 +262,11 @@ function testShowInstallMessage() {
   rm -rf ${temp_error_log_file}
 }
 
-# mock lunch
-function lunch() {
-  echo -n
-}
-
-# mock writeLog
-function writeLog() {
-  echo -n
-}
-
 function testBuild() {
-  # mock mmm
-  function mmm() {
-    echo "${install_log}"
-  }
-
-  # mock showInstalled
-  function showInstalled() {
-    echo -n
-  }
-
-  # mock showError
-  function showError() {
-    echo -n
-  }
-
   # set up
-  log_file='temp-log-file'
-  push_file='temp-push-script'
+  local log_file='temp-log-file'
+  local push_file='temp-push-script'
+  mmm_log=${install_log}
 
   # exercise
   build . 'test' ${log_file} ${push_file} > /dev/null
@@ -299,24 +285,10 @@ function testBuild() {
 }
 
 function testBuildWithError() {
-  # mock mmm
-  function mmm() {
-    echo "${error_log}"
-  }
-
-  # mock showInstalled
-  function showInstalled() {
-    echo -n
-  }
-
-  # mock showError
-  function showError() {
-    echo -n
-  }
-
   # set up
-  log_file='temp-error-log-file'
-  push_file='temp-push-script-for-error'
+  local log_file='temp-error-log-file'
+  local push_file='temp-push-script-for-error'
+  mmm_log=${error_log}
 
   # exercise
   build . 'test' ${log_file} ${push_file} > /dev/null
@@ -338,24 +310,10 @@ function testBuildWithError() {
 }
 
 function testBuildAfterError() {
-  # mock mmm
-  function mmm() {
-    echo "${install_log}"
-  }
-
-  # mock showInstalled
-  function showInstalled() {
-    echo -n
-  }
-
-  # mock showError
-  function showError() {
-    echo -n
-  }
-
   # set up
-  log_file='temp-log-file'
-  push_file='temp-push-script'
+  local log_file='temp-log-file'
+  local push_file='temp-push-script'
+  mmm_log=${install_log}
 
   echo "${push_script_for_error_log}" > ${error_script_file}
 
@@ -378,25 +336,11 @@ function testBuildAfterError() {
 }
 
 function testBuildWithAppendMode() {
-  # mock mmm
-  function mmm() {
-    echo "${install_log}"
-  }
-
-  # mock showInstalled
-  function showInstalled() {
-    echo -n
-  }
-
-  # mock showError
-  function showError() {
-    echo -n
-  }
-
   # set up
   local log_file='temp-log-file'
   local push_file='temp-push-script'
   local append_file='temp-push-spcript'
+  mmm_log=${install_log}
 
   echo "${push_script_for_no_error_log}" > ${append_file}
 
@@ -412,6 +356,37 @@ function testBuildWithAppendMode() {
   rm -rf ${log_file}
   rm -rf ${push_file}
   rm -rf ${append_file}
+}
+
+function testCustomBuild() {
+  # set up
+  local log_file='temp-log-file'
+  local push_file='temp-push-script'
+  local check_param_file='temp-check-param'
+
+  echo "echo \$1 > ${check_param_file}" > ${custom_build_command}
+  echo "echo \"${install_log}\"" >> ${custom_build_command}
+
+  # exercise
+  build . 'custom' ${log_file} ${push_file} > /dev/null
+
+  # verify
+  local push_script=$(cat ${push_file})
+  local diff=$(diff -c <(echo "${push_script_for_install_log}" ) \
+                       <(echo "${push_script}"))
+
+  assertTrue "${diff}" \
+    "[ \"${push_script_for_install_log}\" == \"${push_script}\" ]"
+
+  local diff=$(diff -c <(echo ".") "${check_param_file}")
+  assertTrue "${diff}" \
+    "[ \".\" == \"$(cat ${check_param_file})\" ]"
+
+  # tear down
+  rm -rf ${log_file}
+  rm -rf ${push_file}
+  rm -rf ${custom_build_command}
+  rm -rf ${check_param_file}
 }
 
 # run test
