@@ -10,15 +10,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# mock writeLog
 function writeLog() {
   echo -n
 }
 
-# mock build_command
-function build_command() {
+function lunch() {
+  echo -n
+}
+
+function mmm() {
   local path=$1
   local product_name=$2
-  local log_file=$3
-  echo ${mock_build_command_log} > ${log_file}
+  echo ${mmm_log}
 }

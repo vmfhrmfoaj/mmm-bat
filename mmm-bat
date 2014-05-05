@@ -16,14 +16,16 @@
 # functions
 #
 function helpUsage() {
-  echo "Usage:"
-  echo "    $0 [dir] [product name] [-a]?"
-  echo "    - dir: path for build"
-  echo "           e.g) hardware/qcom/camera"
-  echo "    - product name: ???"
-  echo ""
-  echo "  Optional:"
-  echo "    - append mode(-a): To accumulate a push list."
+  echo    "Usage:"
+  echo    "    $0 [dir] [product name] [-a]?"
+  echo    "    - dir: path for build"
+  echo    "           e.g) hardware/qcom/camera"
+  echo    "    - product name: product string for mmm-build."
+  echo -n "                    If the product name is \"custom\", "
+  echo                        "we to execute the \"mmm-bat-custom.sh\" file."
+  echo    ""
+  echo    "  Optional:"
+  echo    "    - append mode(-a): To accumulate a push list."
 }
 
 #
