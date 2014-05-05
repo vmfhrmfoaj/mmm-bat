@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# mmm-bat.sh v0.2, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
+# mmm-bat.sh v0.3.4, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
 # mmm-bat.sh comes with ABSOLUTELY NO WARRANTY; for details
 # type LICENSE file.  This is free software, and you are welcome
 # to redistribute it under certain conditions; type LICENSE
@@ -18,6 +18,7 @@ push_regx="adb push|adb shell chmod"
 
 error_script_file="error.bat"
 push_log_file="push.log"
+custom_build_command='mmm-bat-custom.sh'
 
 function checkParams() {
   if [ $# -lt 2 ] || [ ! -d $1 ]; then
@@ -55,6 +56,12 @@ function isError() {
   fi
 }
 
+function appendPushScriptHeader() {
+  echo "adb wait-for-device"
+  echo "adb remount"
+  echo "adb shell su -c setenforce 0"
+}
+
 function genPushScriptInternal() {
   local log_file=$1
   if [ ! -f ${log_file} ]; then
@@ -76,20 +83,15 @@ function genPushScriptInternal() {
   done
 }
 
-function appendPushScriptHeader() {
-  echo "adb wait-for-device"
-  echo "adb remount"
-  echo "adb shell su -c setenforce 0"
-}
-
 function appendPushScriptTail() {
   echo "adb shell sync"
   echo "adb reboot"
 }
 
 function genPushScript() {
+  local log_file=$1
   appendPushScriptHeader
-  genPushScriptInternal $1
+  genPushScriptInternal ${log_file}
   appendPushScriptTail
 }
 
@@ -110,32 +112,33 @@ function removeScriptFileIfEmpty() {
   fi
 }
 
-function build_command() {
+function runBuild() {
   local path=$1
   local product_name=$2
   local log_file=$3
 
-  lunch ${product_name}
-  mmm ${path} 2>&1 | tee ${log_file}
+  if [ ${product_name} == "custom" ]; then
+    bash ${custom_build_command} ${path} 2>&1 | tee ${log_file}
+  else
+    source build/envsetup.sh
+    lunch ${product_name}
+    mmm ${path} 2>&1 | tee ${log_file}
+  fi
 }
 
-function build_internal() {
-  local path=$1
-  local product_name=$2
-  local log_file=$3
-  local push_file=$4
-
-  build_command ${path} ${product_name} ${log_file}
-  genPushScript ${log_file} > ${push_file}
+function includeErrorPushScriptIfNeed() {
+  local push_file=$1
   if [ -f ${error_script_file} ]; then
     local temp_file=".temp-$(date +"%N").bat"
     joinPushScript "$(cat ${push_file})" \
                    "$(cat ${error_script_file})" > ${temp_file}
     mv ${temp_file} ${push_file}
   fi
+}
 
-  writeLog "$(showInstalled ${log_file})"
-
+function createErrorPushScriptIfNeed() {
+  local log_file=$1
+  local push_file=$2
   is_error=$(isError ${log_file})
   if [ ${is_error} == "YES" ]; then
     cp ${push_file} ${error_script_file}
@@ -145,22 +148,40 @@ function build_internal() {
   fi
 }
 
+function buildInternal() {
+  local path=$1
+  local product_name=$2
+  local log_file=$3
+  local push_file=$4
+
+  runBuild ${path} ${product_name} ${log_file}
+  genPushScript ${log_file} > ${push_file}
+  includeErrorPushScriptIfNeed ${push_file}
+  writeLog "$(showInstalled ${log_file})"
+  createErrorPushScriptIfNeed ${log_file} ${push_file}
+}
+
+function includeSpecificPushScriptIfNeed() {
+  local push_file=$1
+  local include_push_file=$2
+
+  if [ ! -z "${include_push_file}" ]; then
+    # with append mode
+    local temp_push_file=".${log_file}-$(date +"%N").bat"
+    mv ${push_file} ${temp_push_file}
+    joinPushScript "$(cat ${temp_push_file})" \
+                   "$(cat ${include_push_file})" > ${push_file}
+    rm -rf ${temp_push_file}
+  fi
+}
+
 function build() {
   local path=$1
   local product_name=$2
   local log_file=$3
   local push_file=$4
-  local old_push_file=$5
+  local include_push_file=$5
 
-  local temp_file=".${log_file}-$(date +"%N").bat"
-  build_internal ${path} ${product_name} ${log_file} ${temp_file}
-
-  if [ -z "${old_push_file}" ]; then
-    mv ${temp_file} ${push_file}
-  else
-    # with append mode
-    joinPushScript "$(cat ${temp_file})" \
-                   "$(cat ${old_push_file})" > ${push_file}
-    rm -rf ${temp_file}
-  fi
+  buildInternal ${path} ${product_name} ${log_file} ${push_file}
+  includeSpecificPushScriptIfNeed ${push_file} ${include_push_file}
 }
