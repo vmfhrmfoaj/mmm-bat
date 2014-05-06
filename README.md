@@ -3,6 +3,7 @@ mmm-bat [![Build Status](https://api.travis-ci.org/vmfhrmfoaj/mmm-bat.png?branch
 
 Android mmm build and generate the bat file that push a newly installed binary files.
 
+```
 Usage:
     mmm-bat [dir] [product name] [-a]
 
@@ -13,3 +14,4 @@ Usage:
 
 Optional:
     - append mode(-a): To accumulate a push list.
+```
