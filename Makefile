@@ -8,7 +8,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
 TEST_FILES=$(wildcard test-*.sh)
 all: test
 test: $(patsubst %.sh,%,$(TEST_FILES))

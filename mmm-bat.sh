@@ -68,7 +68,7 @@ function genPushScriptInternal() {
     return
   fi
 
-  install_files=$(grep -o -E "${install_regx}" ${log_file} | awk '{print $2}')
+  local install_files=$(grep -o -E "${install_regx}" ${log_file} | awk '{print $2}')
   for file in ${install_files}; do
     local push_path=$(echo ${file} | tr '/' '\\')
     local target_dir=$(dirname $(echo ${file} | grep -o -E ${root_regx}))
@@ -126,7 +126,7 @@ function runBuild() {
   fi
 }
 
-function includeErrorPushScriptIfNeed() {
+function includeErrorPushScriptIfPossible() {
   local push_file=$1
   if [ -f ${error_script_file} ]; then
     local temp_file=".temp-$(date +"%N").bat"
@@ -139,7 +139,7 @@ function includeErrorPushScriptIfNeed() {
 function createErrorPushScriptIfNeed() {
   local log_file=$1
   local push_file=$2
-  is_error=$(isError ${log_file})
+  local is_error=$(isError ${log_file})
   if [ ${is_error} == "YES" ]; then
     cp ${push_file} ${error_script_file}
     writeLog "$(showError ${log_file})"
@@ -156,12 +156,12 @@ function buildInternal() {
 
   runBuild ${path} ${product_name} ${log_file}
   genPushScript ${log_file} > ${push_file}
-  includeErrorPushScriptIfNeed ${push_file}
+  includeErrorPushScriptIfPossible ${push_file}
   writeLog "$(showInstalled ${log_file})"
   createErrorPushScriptIfNeed ${log_file} ${push_file}
 }
 
-function includeSpecificPushScriptIfNeed() {
+function includePushScriptIfPossible() {
   local push_file=$1
   local include_push_file=$2
 
@@ -183,5 +183,5 @@ function build() {
   local include_push_file=$5
 
   buildInternal ${path} ${product_name} ${log_file} ${push_file}
-  includeSpecificPushScriptIfNeed ${push_file} ${include_push_file}
+  includePushScriptIfPossible ${push_file} ${include_push_file}
 }
