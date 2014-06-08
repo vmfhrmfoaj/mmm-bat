@@ -20,6 +20,22 @@ error_script_file="error.bat"
 push_log_file="push.log"
 custom_build_command='mmm-bat-custom.sh'
 
+function splitPathToRootAndTarget() {
+  local path=${1:-$(pwd)}
+  local splitted_path=${path//android\//android:}
+  echo ${splitted_path}
+}
+
+function getRootPath() {
+  local splitted_path=$1
+  echo $(echo ${splitted_path} | cut -d':' -f1)
+}
+
+function getTargetPath() {
+  local splitted_path=$1
+  echo $(echo ${splitted_path} | cut -d':' -f2)
+}
+
 function checkParams() {
   if [ $# -lt 2 ] || [ ! -d $1 ]; then
     echo "INVALID"

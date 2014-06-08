@@ -389,5 +389,31 @@ function testCustomBuild() {
   rm -rf ${check_param_file}
 }
 
+function testGetRootPath() {
+  # set up
+  local path="/home/user/project/android/a/b/c"
+  local expected="/home/user/project/android"
+
+  # exercise
+  parsing=$(splitPathToRootAndTarget ${path})
+  res=$(getRootPath ${parsing})
+
+  # verify
+  assertEquals ${expected} ${res}
+}
+
+function testGetTargetPath() {
+  # set up
+  local path="/home/user/project/android/a/b/c"
+  local expected="a/b/c"
+
+  # exercise
+  parsing=$(splitPathToRootAndTarget ${path})
+  res=$(getTargetPath ${parsing})
+
+  # verify
+  assertEquals ${expected} ${res}
+}
+
 # run test
 . shUnit2/src/shunit2
