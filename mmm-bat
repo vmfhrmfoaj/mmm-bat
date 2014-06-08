@@ -12,6 +12,10 @@
 
 . mmm-bat.sh
 
+# configureations
+build_log_file="mmm.log"
+script_file="push.bat"
+
 #
 # functions
 #
@@ -31,16 +35,20 @@ function helpUsage() {
 #
 # init
 #
-path=$1
+relative_target_path=$1
 product_name=$2
 is_accumulation_mode=$3
 
-build_log_file="mmm.log"
-script_file="push.bat"
+#
+cur_dir=`pwd`
+absolute_target_path=$(pwd)/${relative_target_path}
+parsed_path=$(splitPathToRootAndTarget ${absolute_target_path})
+root_dir=$(getRootPath ${parsed_path})
+cd ${root_dir}
 
-#
-# main
-#
+path=$(getTargetPath ${parsed_path})
+
+# check param
 is_valid=$(checkParams ${path} ${product_name})
 if [ ${is_valid} == "INVALID" ]; then
   helpUsage
@@ -52,6 +60,7 @@ writeLog "---------------------------------------------------------------------"
 writeLog "Date: $(date)"
 writeLog "Product: ${product_name}"
 writeLog "Path: ${path}"
+writeLog "Build directory ${cur_dir}"
 
 # build & generate push script
 if [ -z "${is_accumulation_mode}" ]; then
@@ -59,3 +68,6 @@ if [ -z "${is_accumulation_mode}" ]; then
 else
   build ${path} ${product_name} ${build_log_file} ${script_file} ${script_file}
 fi
+
+#
+cd ${cur_dir}
