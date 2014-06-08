@@ -32,14 +32,12 @@ function helpUsage() {
   echo    "    - append mode(-a): To accumulate a push list."
 }
 
-#
 # init
-#
 relative_target_path=$1
 product_name=$2
 is_accumulation_mode=$3
 
-#
+# change working dir and adjust target path.
 cur_dir=`pwd`
 absolute_target_path=$(pwd)/${relative_target_path}
 parsed_path=$(splitPathToRootAndTarget ${absolute_target_path})
@@ -52,7 +50,6 @@ if [ ! -d ${root_dir} ]; then
   exit -1
 fi
 cd ${root_dir}
-
 path=$(getTargetPath ${parsed_path})
 
 # check param
