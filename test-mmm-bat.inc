@@ -179,3 +179,11 @@ Install: DumydumydumydumyinstalldumydumydumydumydumyInstall:
 Install: DumydumydumydumyinstalldumydumydumydumydumyInstall:
 EOF
 )
+
+build_prop_content=$(cat <<EOF
+ro.type.build=AAA
+ro.build.type=YYY
+ro.product.name=XXX
+ro.name.product=BBB
+EOF
+)

@@ -36,6 +36,13 @@ function getTargetPath() {
   echo $(echo ${splitted_path} | cut -d':' -f2)
 }
 
+function predictProductName() {
+  local build_prop=${1:-out/target/product/*/system/build.prop}
+  product_name=$(cat ${build_prop} | grep "ro.product.name=" | head -1 | cut -d'=' -f2)
+  type=$(cat ${build_prop} | grep "ro.build.type=" | head -1 | cut -d'=' -f2)
+  echo "${product_name}-${type}"
+}
+
 function checkParams() {
   if [ $# -lt 2 ] || [ ! -d $1 ]; then
     echo "INVALID"

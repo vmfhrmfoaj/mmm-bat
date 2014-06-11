@@ -415,5 +415,20 @@ function testGetTargetPath() {
   assertEquals ${expected} ${res}
 }
 
+function testPredictProductName() {
+  # set up
+  local build_prop=build.prop
+  echo "${build_prop_content}" > ${build_prop}
+
+  # exercise
+  product_name=$(predictProductName ${build_prop})
+
+  # verify
+  assertEquals "XXX-YYY" ${product_name}
+
+  # tear down
+  rm -rf ${build_prop}
+}
+
 # run test
 . shUnit2/src/shunit2

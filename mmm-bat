@@ -34,7 +34,7 @@ function helpUsage() {
 
 # init
 relative_target_path=$1
-product_name=$2
+product_name=${2:-$(predictProductName)}
 is_accumulation_mode=$3
 
 # change working dir and adjust target path.
