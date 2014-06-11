@@ -41,6 +41,7 @@ is_accumulation_mode=$3
 cur_dir=`pwd`
 absolute_target_path=$(pwd)/${relative_target_path}
 parsed_path=$(splitPathToRootAndTarget ${absolute_target_path})
+path=$(getTargetPath ${parsed_path})
 root_dir=$(getRootPath ${parsed_path})
 if [ ! -d ${root_dir} ]; then
   echo "Can not find the Android directory."
@@ -48,9 +49,9 @@ if [ ! -d ${root_dir} ]; then
   echo ""
   helpUsage
   exit -1
+else
+  cd ${root_dir}
 fi
-cd ${root_dir}
-path=$(getTargetPath ${parsed_path})
 
 # check param
 is_valid=$(checkParams ${path} ${product_name})
