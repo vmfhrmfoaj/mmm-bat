@@ -37,24 +37,28 @@ relative_target_path=$1
 product_name=$2
 is_accumulation_mode=$3
 
-# change working dir and adjust target path.
 cur_dir=`pwd`
+
+# change working dir and adjust target path.
 absolute_target_path=$(pwd)/${relative_target_path}
-parsed_path=$(splitPathToRootAndTarget ${absolute_target_path})
-path=$(getTargetPath ${parsed_path})
-root_dir=$(getRootPath ${parsed_path})
+target_path=$(getTargetPath ${absolute_target_path})
+root_dir=$(getRootPath ${absolute_target_path})
 if [ ! -d ${root_dir} ]; then
   echo "Can not find the Android directory."
-  echo "-  [DEBUG] parsed_path: \"${parsed_path}\""
+  echo "-  [DEBUG] relative_target_path: \"${relative_target_path}\""
+  echo "-  [DEBUG] absolute_target_path: \"${absolute_target_path}\""
+  echo "-  [DEBUG] target_path: \"${target_path}\""
+  echo "-  [DEBUG] root_path: \"${root_path}\""
   echo ""
   helpUsage
   exit -1
 else
+  # for mmm-build
   cd ${root_dir}
 fi
 
 # check param
-is_valid=$(checkParams ${path} ${product_name})
+is_valid=$(checkParams ${target_path} ${product_name})
 if [ ${is_valid} == "INVALID" ]; then
   helpUsage
   exit -1
@@ -64,15 +68,15 @@ fi
 writeLog "---------------------------------------------------------------------"
 writeLog "Date: $(date)"
 writeLog "Product: ${product_name}"
-writeLog "Path: ${path}"
+writeLog "Path: ${target_path}"
 writeLog "Build directory ${cur_dir}"
 
 # build & generate push script
 if [ -z "${is_accumulation_mode}" ]; then
-  build ${path} ${product_name} ${build_log_file} ${script_file}
+  build ${target_path} ${product_name} ${build_log_file} ${script_file}
 else
-  build ${path} ${product_name} ${build_log_file} ${script_file} ${script_file}
+  build ${target_path} ${product_name} ${build_log_file} ${script_file} ${script_file}
 fi
 
-#
+# return current directory
 cd ${cur_dir}

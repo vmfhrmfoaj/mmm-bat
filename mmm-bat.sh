@@ -22,18 +22,22 @@ custom_build_command='mmm-bat-custom.sh'
 
 function splitPathToRootAndTarget() {
   local path=${1:-$(pwd)}
-  local splitted_path=${path//android\//android:}
-  echo ${splitted_path}
+  if [ $(echo ${path} | grep --count "/android/") -ge "1" ]; then
+    local splitted_path=${path//\/android\//\/android:}
+    echo ${splitted_path}
+  else
+    echo "BAD-PATH"
+  fi
 }
 
 function getRootPath() {
-  local splitted_path=$1
-  echo $(echo ${splitted_path} | cut -d':' -f1)
+  local path=$1
+  echo $(echo $(splitPathToRootAndTarget ${path}) | cut -d':' -f1)
 }
 
 function getTargetPath() {
-  local splitted_path=$1
-  echo $(echo ${splitted_path} | cut -d':' -f2)
+  local path=$1
+  echo $(echo $(splitPathToRootAndTarget ${path}) | cut -d':' -f2)
 }
 
 function checkParams() {

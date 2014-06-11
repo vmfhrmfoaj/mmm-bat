@@ -395,8 +395,17 @@ function testGetRootPath() {
   local expected="/home/user/project/android"
 
   # exercise
-  parsing=$(splitPathToRootAndTarget ${path})
-  res=$(getRootPath ${parsing})
+  res=$(getRootPath ${path})
+
+  # verify
+  assertEquals ${expected} ${res}
+
+  # set up
+  local path="/home/user/project/no-android/a/b/c"
+  local expected="BAD-PATH"
+
+  # exercise
+  res=$(getRootPath ${path})
 
   # verify
   assertEquals ${expected} ${res}
@@ -408,8 +417,17 @@ function testGetTargetPath() {
   local expected="a/b/c"
 
   # exercise
-  parsing=$(splitPathToRootAndTarget ${path})
-  res=$(getTargetPath ${parsing})
+  res=$(getTargetPath ${path})
+
+  # verify
+  assertEquals ${expected} ${res}
+
+  # set up
+  local path="/home/user/project/no-android/a/b/c"
+  local expected="BAD-PATH"
+
+  # exercise
+  res=$(getTargetPath ${path})
 
   # verify
   assertEquals ${expected} ${res}
