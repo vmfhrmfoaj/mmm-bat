@@ -180,10 +180,17 @@ Install: DumydumydumydumyinstalldumydumydumydumydumyInstall:
 EOF
 )
 
-build_prop_content=$(cat <<EOF
-ro.type.build=AAA
-ro.build.type=YYY
-ro.product.name=XXX
-ro.name.product=BBB
+mmm_log=$(cat <<EOF
+PRODUCT_TARGET=AAA
+TARGET_PRODUCT=XXX
+TARGET_BUILD_VARIANT=YYY
+TARGET_VARIANT_BUILD=BBB
+EOF
+)
+
+mmm_log_2=$(cat <<EOF
+PRODUCT_TARGET=AAA
+TARGET_PRODUCT=XXX
+TARGET_VARIANT_BUILD=BBB
 EOF
 )

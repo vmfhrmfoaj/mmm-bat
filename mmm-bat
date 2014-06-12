@@ -32,22 +32,12 @@ function helpUsage() {
   echo    "    - append mode(-a): To accumulate a push list."
 }
 
-# init
-relative_target_path=$1
-product_name=${2:-$(predictProductName)}
-is_accumulation_mode=$3
-
+# change working dir
 cur_dir=`pwd`
-
-# change working dir and adjust target path.
-absolute_target_path=$(pwd)/${relative_target_path}
-target_path=$(getTargetPath ${absolute_target_path})
-root_dir=$(getRootPath ${absolute_target_path})
+root_dir=$(getRootPath ${cur_dir})
 if [ ! -d ${root_dir} ]; then
   echo "Can not find the Android directory."
-  echo "-  [DEBUG] relative_target_path: \"${relative_target_path}\""
-  echo "-  [DEBUG] absolute_target_path: \"${absolute_target_path}\""
-  echo "-  [DEBUG] target_path: \"${target_path}\""
+  echo "-  [DEBUG] cur_dir: \"${cur_dir:}\""
   echo "-  [DEBUG] root_path: \"${root_path}\""
   echo ""
   helpUsage
@@ -56,6 +46,14 @@ else
   # for mmm-build
   cd ${root_dir}
 fi
+
+# init
+relative_target_path=$1
+product_name=${2:-$(predictProductName)}
+is_accumulation_mode=$3
+
+# adjust target path.
+target_path=$(getTargetPath "${cur_dir}/${relative_target_path}")
 
 # check param
 is_valid=$(checkParams ${target_path} ${product_name})

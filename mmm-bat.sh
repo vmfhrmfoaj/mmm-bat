@@ -20,6 +20,8 @@ error_script_file="error.bat"
 push_log_file="push.log"
 custom_build_command='mmm-bat-custom.sh'
 
+invalid_product_name="INVALID-PRODUCT-NAME"
+
 function splitPathToRootAndTarget() {
   local path=${1:-$(pwd)}
   if [ $(echo ${path} | grep --count "/android/") -ge "1" ]; then
@@ -41,14 +43,26 @@ function getTargetPath() {
 }
 
 function predictProductName() {
-  local build_prop=${1:-out/target/product/*/system/build.prop}
-  product_name=$(cat ${build_prop} | grep "ro.product.name=" | head -1 | cut -d'=' -f2)
-  type=$(cat ${build_prop} | grep "ro.build.type=" | head -1 | cut -d'=' -f2)
-  echo "${product_name}-${type}"
+  local log_file=${1:-build.log}
+  local product_regex="TARGET_PRODUCT="
+  local type_regex="TARGET_BUILD_VARIANT="
+
+  product=$(cat ${log_file} | grep ${product_regex} | head -1 | cut -d'=' -f2)
+  product=${product:-${invalid_product_name}}
+  type=$(cat ${log_file} | grep ${type_regex} | head -1 | cut -d'=' -f2)
+
+  echo -n ${product}
+  if [ -n "${type}" ]; then
+    echo "-${type}"
+  fi
 }
 
 function checkParams() {
-  if [ $# -lt 2 ] || [ ! -d $1 ]; then
+  local target_path=$1
+  local product_name=$2
+
+  if [ $# -lt 2 ] || [ ! -d ${target_path} ] || \
+     [ ${product_name} == ${invalid_product_name}  ]; then
     echo "INVALID"
   else
     echo "VALID"
