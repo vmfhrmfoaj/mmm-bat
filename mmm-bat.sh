@@ -43,7 +43,7 @@ function getTargetPath() {
 }
 
 function predictProductName() {
-  local log_file=${1:-build.log}
+  local log_file=${1:-${build_log_file}}
   local product_regex="TARGET_PRODUCT="
   local type_regex="TARGET_BUILD_VARIANT="
 
