@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# test-mmm-bat.sh v0.3.4 Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
+# test-mmm-bat.sh, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
 # test-mmm-bat.sh comes with ABSOLUTELY NO WARRANTY; for details
 # type LICENSE file.  This is free software, and you are welcome
 # to redistribute it under certain conditions; type LICENSE
@@ -25,19 +25,31 @@ function oneTimeTearDown() {
 
 function testIfThereAreNotEnoughParms() {
   # set up
-  local dir=`pwd`
+  local target_dir=`pwd`
 
   # exercise
-  local is_valid=$(checkParams ${dir})
+  local is_valid=$(checkParams ${target_dir})
 
   # verify
   assertEquals "INVALID" ${is_valid}
 }
 
-function testBadParam() {
+function testNonExistingTargetDirectory() {
   # set up
-  local dir="bad-dir"
+  local target_dir="bad-dir"
   local product_name="test"
+
+  # exercise
+  local is_valid=$(checkParams ${target_dir} ${product_name})
+
+  # verify
+  assertEquals "INVALID" ${is_valid}
+}
+
+function testInvalidProductName() {
+  # set up
+  local target_dir=`pwd`
+  local product_name=${invalid_product_name}
 
   # exercise
   local is_valid=$(checkParams ${dir} ${product_name})
@@ -45,14 +57,15 @@ function testBadParam() {
   # verify
   assertEquals "INVALID" ${is_valid}
 }
+
 
 function testNormalParam() {
   # set up
-  local dir=`pwd`
+  local target_dir=`pwd`
   local product_name="test"
 
   # exercise
-  local is_valid=$(checkParams ${dir} ${product_name})
+  local is_valid=$(checkParams ${target_dir} ${product_name})
 
   # verify
   assertEquals "VALID" ${is_valid}
@@ -266,7 +279,7 @@ function testBuild() {
   # set up
   local log_file='temp-log-file'
   local push_file='temp-push-script'
-  mmm_log=${install_log}
+  local mmm_log=${install_log}
 
   # exercise
   build . 'test' ${log_file} ${push_file} > /dev/null
@@ -288,7 +301,7 @@ function testBuildWithError() {
   # set up
   local log_file='temp-error-log-file'
   local push_file='temp-push-script-for-error'
-  mmm_log=${error_log}
+  local mmm_log=${error_log}
 
   # exercise
   build . 'test' ${log_file} ${push_file} > /dev/null
@@ -313,7 +326,7 @@ function testBuildAfterError() {
   # set up
   local log_file='temp-log-file'
   local push_file='temp-push-script'
-  mmm_log=${install_log}
+  local mmm_log=${install_log}
 
   echo "${push_script_for_error_log}" > ${error_script_file}
 
@@ -340,7 +353,7 @@ function testBuildWithAppendMode() {
   local log_file='temp-log-file'
   local push_file='temp-push-script'
   local append_file='temp-push-spcript'
-  mmm_log=${install_log}
+  local mmm_log=${install_log}
 
   echo "${push_script_for_no_error_log}" > ${append_file}
 
@@ -387,6 +400,75 @@ function testCustomBuild() {
   rm -rf ${push_file}
   rm -rf ${custom_build_command}
   rm -rf ${check_param_file}
+}
+
+function testGetRootPath() {
+  # set up
+  local path="/home/user/project/android/a/b/c"
+  local expected="/home/user/project/android"
+
+  # exercise
+  res=$(getRootPath ${path})
+
+  # verify
+  assertEquals ${expected} ${res}
+
+  # set up
+  local path="/home/user/project/no-android/a/b/c"
+  local expected="BAD-PATH"
+
+  # exercise
+  res=$(getRootPath ${path})
+
+  # verify
+  assertEquals ${expected} ${res}
+}
+
+function testGetTargetPath() {
+  # set up
+  local path="/home/user/project/android/a/b/c"
+  local expected="a/b/c"
+
+  # exercise
+  res=$(getTargetPath ${path})
+
+  # verify
+  assertEquals ${expected} ${res}
+
+  # set up
+  local path="/home/user/project/no-android/a/b/c"
+  local expected="BAD-PATH"
+
+  # exercise
+  res=$(getTargetPath ${path})
+
+  # verify
+  assertEquals ${expected} ${res}
+}
+
+function testPredictProductName() {
+  # set up
+  local log=mmm.log
+  local log_2=mmm2.log
+  local log_3=mmm3.log
+  echo "${mmm_log}" > ${log}
+  echo "${mmm_log_2}" > ${log_2}
+  echo "not-contain-product-name-hint" > ${log_3}
+
+  # exercise
+  product_name=$(predictProductName ${log})
+  product_name_2=$(predictProductName ${log_2})
+  product_name_3=$(predictProductName ${log_3})
+
+  # verify
+  assertEquals "XXX-YYY" ${product_name}
+  assertEquals "XXX" ${product_name_2}
+  assertEquals ${invalid_product_name} ${product_name_3}
+
+  # tear down
+  rm -rf ${log}
+  rm -rf ${log_2}
+  rm -rf ${log_3}
 }
 
 # run test

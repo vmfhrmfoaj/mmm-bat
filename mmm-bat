@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# mmm-bat v0.3.4 Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
+# mmm-bat, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
 # mmm-bat comes with ABSOLUTELY NO WARRANTY; for details
 # type LICENSE file.  This is free software, and you are welcome
 # to redistribute it under certain conditions; type LICENSE
@@ -11,6 +11,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 . mmm-bat.sh
+
+# configureations
+build_log_file="mmm.log"
+script_file="push.bat"
 
 #
 # functions
@@ -28,20 +32,31 @@ function helpUsage() {
   echo    "    - append mode(-a): To accumulate a push list."
 }
 
-#
+# change working dir
+cur_dir=`pwd`
+root_dir=$(getRootPath ${cur_dir})
+if [ ! -d ${root_dir} ]; then
+  echo "Can not find the Android directory."
+  echo "-  [DEBUG] cur_dir: \"${cur_dir:}\""
+  echo "-  [DEBUG] root_path: \"${root_path}\""
+  echo ""
+  helpUsage
+  exit -1
+else
+  # for mmm-build
+  cd ${root_dir}
+fi
+
 # init
-#
-path=$1
-product_name=$2
+relative_target_path=$1
+product_name=${2:-$(predictProductName)}
 is_accumulation_mode=$3
 
-build_log_file="mmm.log"
-script_file="push.bat"
+# adjust target path.
+target_path=$(getTargetPath "${cur_dir}/${relative_target_path}")
 
-#
-# main
-#
-is_valid=$(checkParams ${path} ${product_name})
+# check param
+is_valid=$(checkParams ${target_path} ${product_name})
 if [ ${is_valid} == "INVALID" ]; then
   helpUsage
   exit -1
@@ -51,11 +66,15 @@ fi
 writeLog "---------------------------------------------------------------------"
 writeLog "Date: $(date)"
 writeLog "Product: ${product_name}"
-writeLog "Path: ${path}"
+writeLog "Path: ${target_path}"
+writeLog "Build directory ${cur_dir}"
 
 # build & generate push script
 if [ -z "${is_accumulation_mode}" ]; then
-  build ${path} ${product_name} ${build_log_file} ${script_file}
+  build ${target_path} ${product_name} ${build_log_file} ${script_file}
 else
-  build ${path} ${product_name} ${build_log_file} ${script_file} ${script_file}
+  build ${target_path} ${product_name} ${build_log_file} ${script_file} ${script_file}
 fi
+
+# return current directory
+cd ${cur_dir}
