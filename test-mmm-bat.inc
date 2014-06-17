@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# test-mmm-bat.inc v0.3.4 Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
+# test-mmm-bat.inc, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
 # test-mmm-bat.inc comes with ABSOLUTELY NO WARRANTY; for details
 # type LICENSE file.  This is free software, and you are welcome
 # to redistribute it under certain conditions; type LICENSE
@@ -177,5 +177,20 @@ Install: DumydumydumydumyinstalldumydumydumydumydumyInstall:
 Install: DumydumydumydumyinstalldumydumydumydumydumyInstall:
 Install: DumydumydumydumyinstalldumydumydumydumydumyInstall:
 Install: DumydumydumydumyinstalldumydumydumydumydumyInstall:
+EOF
+)
+
+mmm_log=$(cat <<EOF
+PRODUCT_TARGET=AAA
+TARGET_PRODUCT=XXX
+TARGET_BUILD_VARIANT=YYY
+TARGET_VARIANT_BUILD=BBB
+EOF
+)
+
+mmm_log_2=$(cat <<EOF
+PRODUCT_TARGET=AAA
+TARGET_PRODUCT=XXX
+TARGET_VARIANT_BUILD=BBB
 EOF
 )

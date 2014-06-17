@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# mmm-bat.sh v0.3.4, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
+# mmm-bat.sh, Copyright (C) 2013-2014 Jinseop Kim(vmfhrmfoaj@yahoo.com)
 # mmm-bat.sh comes with ABSOLUTELY NO WARRANTY; for details
 # type LICENSE file.  This is free software, and you are welcome
 # to redistribute it under certain conditions; type LICENSE
@@ -20,8 +20,49 @@ error_script_file="error.bat"
 push_log_file="push.log"
 custom_build_command='mmm-bat-custom.sh'
 
+invalid_product_name="INVALID-PRODUCT-NAME"
+
+function splitPathToRootAndTarget() {
+  local path=${1:-$(pwd)}
+  if [ $(echo ${path} | grep --count "/android/") -ge "1" ]; then
+    local splitted_path=${path//\/android\//\/android:}
+    echo ${splitted_path}
+  else
+    echo "BAD-PATH"
+  fi
+}
+
+function getRootPath() {
+  local path=$1
+  echo $(echo $(splitPathToRootAndTarget ${path}) | cut -d':' -f1)
+}
+
+function getTargetPath() {
+  local path=$1
+  echo $(echo $(splitPathToRootAndTarget ${path}) | cut -d':' -f2)
+}
+
+function predictProductName() {
+  local log_file=${1:-${build_log_file}}
+  local product_regex="TARGET_PRODUCT="
+  local type_regex="TARGET_BUILD_VARIANT="
+
+  product=$(cat ${log_file} | grep ${product_regex} | head -1 | cut -d'=' -f2)
+  product=${product:-${invalid_product_name}}
+  type=$(cat ${log_file} | grep ${type_regex} | head -1 | cut -d'=' -f2)
+
+  echo -n ${product}
+  if [ -n "${type}" ]; then
+    echo "-${type}"
+  fi
+}
+
 function checkParams() {
-  if [ $# -lt 2 ] || [ ! -d $1 ]; then
+  local target_path=$1
+  local product_name=$2
+
+  if [ $# -lt 2 ] || [ ! -d ${target_path} ] || \
+     [ ${product_name} == ${invalid_product_name}  ]; then
     echo "INVALID"
   else
     echo "VALID"
@@ -68,7 +109,7 @@ function genPushScriptInternal() {
     return
   fi
 
-  install_files=$(grep -o -E "${install_regx}" ${log_file} | awk '{print $2}')
+  local install_files=$(grep -o -E "${install_regx}" ${log_file} | awk '{print $2}')
   for file in ${install_files}; do
     local push_path=$(echo ${file} | tr '/' '\\')
     local target_dir=$(dirname $(echo ${file} | grep -o -E ${root_regx}))
@@ -126,7 +167,7 @@ function runBuild() {
   fi
 }
 
-function includeErrorPushScriptIfNeed() {
+function includeErrorPushScriptIfPossible() {
   local push_file=$1
   if [ -f ${error_script_file} ]; then
     local temp_file=".temp-$(date +"%N").bat"
@@ -139,7 +180,7 @@ function includeErrorPushScriptIfNeed() {
 function createErrorPushScriptIfNeed() {
   local log_file=$1
   local push_file=$2
-  is_error=$(isError ${log_file})
+  local is_error=$(isError ${log_file})
   if [ ${is_error} == "YES" ]; then
     cp ${push_file} ${error_script_file}
     writeLog "$(showError ${log_file})"
@@ -156,12 +197,12 @@ function buildInternal() {
 
   runBuild ${path} ${product_name} ${log_file}
   genPushScript ${log_file} > ${push_file}
-  includeErrorPushScriptIfNeed ${push_file}
+  includeErrorPushScriptIfPossible ${push_file}
   writeLog "$(showInstalled ${log_file})"
   createErrorPushScriptIfNeed ${log_file} ${push_file}
 }
 
-function includeSpecificPushScriptIfNeed() {
+function includePushScriptIfPossible() {
   local push_file=$1
   local include_push_file=$2
 
@@ -183,5 +224,5 @@ function build() {
   local include_push_file=$5
 
   buildInternal ${path} ${product_name} ${log_file} ${push_file}
-  includeSpecificPushScriptIfNeed ${push_file} ${include_push_file}
+  includePushScriptIfPossible ${push_file} ${include_push_file}
 }
