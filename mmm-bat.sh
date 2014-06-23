@@ -10,17 +10,28 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-install_regx="Install: ([_0-9a-zA-Z]+/)+[-._0-9a-zA-Z]+"
-root_regx="/system.*"
-error_regx="\<error: |\<Error [0-9]+"
-bin_regx="/bin/?$"
-push_regx="adb push|adb shell chmod"
+# predefined return value
+YES="YES"
+NO="NO"
+VALID="VALID"
+INVALID="INVALID"
 
-error_script_file="error.bat"
-push_log_file="push.log"
-custom_build_command='mmm-bat-custom.sh'
+# predefined regular expression
+INSTALL_REGX="Install: ([_0-9a-zA-Z]+/)+[-._0-9a-zA-Z]+"
+ROOT_REGX="/system.*"
+ERROR_REGX="\<error: |\<Error [0-9]+"
+BIN_REGX="/bin/?$"
+PUSH_REGX="adb push|adb shell chmod"
 
-invalid_product_name="INVALID-PRODUCT-NAME"
+# predefined files
+ERROR_SCRIPT="error.bat"
+PUSH_LOG="push.log"
+CUSTOM_BUILD='mmm-bat-custom.sh'
+
+
+#
+# Fucntions
+#
 
 function splitPathToRootAndTarget() {
   local path=${1:-$(pwd)}
@@ -28,7 +39,7 @@ function splitPathToRootAndTarget() {
     local splitted_path=${path//\/android\//\/android:}
     echo ${splitted_path}
   else
-    echo "BAD-PATH"
+    echo ${INVALID}
   fi
 }
 
@@ -48,7 +59,7 @@ function predictProductName() {
   local type_regex="TARGET_BUILD_VARIANT="
 
   product=$(cat ${log_file} | grep ${product_regex} | head -1 | cut -d'=' -f2)
-  product=${product:-${invalid_product_name}}
+  product=${product:-${INVALID}}
   type=$(cat ${log_file} | grep ${type_regex} | head -1 | cut -d'=' -f2)
 
   echo -n ${product}
@@ -62,38 +73,38 @@ function checkParams() {
   local product_name=$2
 
   if [ $# -lt 2 ] || [ ! -d ${target_path} ] || \
-     [ ${product_name} == ${invalid_product_name}  ]; then
-    echo "INVALID"
+     [ ${product_name} == ${INVALID}  ]; then
+    echo ${INVALID}
   else
-    echo "VALID"
+    echo ${VALID}
   fi
 }
 
 function writeLog() {
   local logs=$1
   echo "${logs}"
-  echo "${logs}" >> ${push_log_file}
+  echo "${logs}" >> ${PUSH_LOG}
 }
 
 function showError() {
   local log_file=$1
   echo "!!! error !!!"
-  grep -E "${error_regx}" ${log_file}
+  grep -E "${ERROR_REGX}" ${log_file}
 }
 
 function showInstalled() {
   local log_file=$1
   echo "!!! install !!!"
-  grep -E "${install_regx}" ${log_file}
+  grep -E "${INSTALL_REGX}" ${log_file}
 }
 
 function isError() {
   local log_file=$1
-  local is_eorr=$(grep -c -E "${error_regx}" ${log_file})
+  local is_eorr=$(grep -c -E "${ERROR_REGX}" ${log_file})
   if [ ${is_eorr} == "0" ]; then
-    echo "NO"
+    echo ${NO}
   else
-    echo "YES"
+    echo ${YES}
   fi
 }
 
@@ -109,14 +120,14 @@ function genPushScriptInternal() {
     return
   fi
 
-  local install_files=$(grep -o -E "${install_regx}" ${log_file} | awk '{print $2}')
+  local install_files=$(grep -o -E "${INSTALL_REGX}" ${log_file} | awk '{print $2}')
   for file in ${install_files}; do
     local push_path=$(echo ${file} | tr '/' '\\')
-    local target_dir=$(dirname $(echo ${file} | grep -o -E ${root_regx}))
+    local target_dir=$(dirname $(echo ${file} | grep -o -E ${ROOT_REGX}))
     echo "adb push ${push_path} ${target_dir}"
 
     # change mode for executable files
-    local is_executable_file=$(echo ${target_dir} | grep -c -E ${bin_regx})
+    local is_executable_file=$(echo ${target_dir} | grep -c -E ${BIN_REGX})
     if [ ! ${is_executable_file} == "0" ]; then
       local push_file=$(basename $file)
       echo "adb shell chmod 777 ${target_dir%/}/${push_file}"
@@ -140,8 +151,8 @@ function joinPushScript() {
   local script_1=$1
   local script_2=$2
   appendPushScriptHeader
-  echo "${script_1}" | grep -E "${push_regx}"
-  echo "${script_2}" | grep -E "${push_regx}"
+  echo "${script_1}" | grep -E "${PUSH_REGX}"
+  echo "${script_2}" | grep -E "${PUSH_REGX}"
   appendPushScriptTail
 }
 
@@ -159,7 +170,7 @@ function runBuild() {
   local log_file=$3
 
   if [ ${product_name} == "custom" ]; then
-    bash ${custom_build_command} ${path} 2>&1 | tee ${log_file}
+    bash ${CUSTOM_BUILD} ${path} 2>&1 | tee ${log_file}
   else
     source build/envsetup.sh
     lunch ${product_name}
@@ -169,10 +180,10 @@ function runBuild() {
 
 function includeErrorPushScriptIfPossible() {
   local push_file=$1
-  if [ -f ${error_script_file} ]; then
+  if [ -f ${ERROR_SCRIPT} ]; then
     local temp_file=".temp-$(date +"%N").bat"
     joinPushScript "$(cat ${push_file})" \
-                   "$(cat ${error_script_file})" > ${temp_file}
+                   "$(cat ${ERROR_SCRIPT})" > ${temp_file}
     mv ${temp_file} ${push_file}
   fi
 }
@@ -182,10 +193,10 @@ function createErrorPushScriptIfNeed() {
   local push_file=$2
   local is_error=$(isError ${log_file})
   if [ ${is_error} == "YES" ]; then
-    cp ${push_file} ${error_script_file}
+    cp ${push_file} ${ERROR_SCRIPT}
     writeLog "$(showError ${log_file})"
   else
-    rm -rf ${error_script_file}
+    rm -rf ${ERROR_SCRIPT}
   fi
 }
 

@@ -10,7 +10,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-install_log=$(cat <<EOF
+normal_log=$(cat <<EOF
 Install: dumydumydumydumyinstalldumydumydumydumydumyInstall:
 Install: 123/abc/123/system/abc/8910.so
 Install: DumydumydumydumyinstalldumydumydumydumydumyInstall:
@@ -27,7 +27,7 @@ Install: DumydumydumydumyinstalldumydumydumydumydumyInstall:
 EOF
 )
 
-push_script_for_install_log=$(cat <<EOF
+normal_log_sh=$(cat <<EOF
 adb wait-for-device
 adb remount
 adb shell su -c setenforce 0
@@ -57,7 +57,7 @@ error:dumydumydumydumyerrordumydumyErrordumydumydumyerror:
 EOF
 )
 
-push_script_for_no_error_log=$(cat <<EOF
+no_error_log_sh=$(cat <<EOF
 adb wait-for-device
 adb remount
 adb shell su -c setenforce 0
@@ -85,7 +85,7 @@ dumydumydumy [...] Error 1
 EOF
 )
 
-push_script_for_error_log=$(cat <<EOF
+error_log_sh=$(cat <<EOF
 adb wait-for-device
 adb remount
 adb shell su -c setenforce 0
@@ -96,7 +96,7 @@ adb reboot
 EOF
 )
 
-push_script_for_install_error_log=$(cat <<EOF
+install_error_log_sh=$(cat <<EOF
 adb wait-for-device
 adb remount
 adb shell su -c setenforce 0
@@ -113,21 +113,21 @@ adb reboot
 EOF
 )
 
-err_msg_for_error_log=$(cat <<EOF
+error_log_err_msg=$(cat <<EOF
 !!! error !!!
 dumydumydumy error: 123.c
 dumydumydumy [...] Error 1
 EOF
 )
 
-install_msg_for_error_log=$(cat <<EOF
+error_log_install_msg=$(cat <<EOF
 !!! install !!!
 Install: abc/123/system/abc/123.so
 Install: abc/123/system/abc/567.so
 EOF
 )
 
-append_push_script=$(cat <<EOF
+joined_sh=$(cat <<EOF
 adb wait-for-device
 adb remount
 adb shell su -c setenforce 0
@@ -157,7 +157,7 @@ Install: DumydumydumydumyinstalldumydumydumydumydumyInstall:
 EOF
 )
 
-push_script_for_binary_log=$(cat <<EOF
+binary_log_sh=$(cat <<EOF
 adb wait-for-device
 adb remount
 adb shell su -c setenforce 0
