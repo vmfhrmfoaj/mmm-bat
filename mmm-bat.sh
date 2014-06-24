@@ -10,6 +10,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+#
+# Variables
+#
+
 # predefined return value
 YES="YES"
 NO="NO"
@@ -33,69 +37,17 @@ CUSTOM_BUILD='mmm-bat-custom.sh'
 # Fucntions
 #
 
-function splitPathToRootAndTarget() {
-  local path=${1:-$(pwd)}
-  if [ $(echo ${path} | grep --count "/android/") -ge "1" ]; then
-    local splitted_path=${path//\/android\//\/android:}
-    echo ${splitted_path}
-  else
-    echo ${INVALID}
-  fi
-}
-
-function getRootPath() {
-  local path=$1
-  echo $(echo $(splitPathToRootAndTarget ${path}) | cut -d':' -f1)
-}
-
-function getTargetPath() {
-  local path=$1
-  echo $(echo $(splitPathToRootAndTarget ${path}) | cut -d':' -f2)
-}
-
-function predictProductName() {
-  local log_file=${1:-${build_log_file}}
-  local product_regex="TARGET_PRODUCT="
-  local type_regex="TARGET_BUILD_VARIANT="
-
-  product=$(cat ${log_file} | grep ${product_regex} | head -1 | cut -d'=' -f2)
-  product=${product:-${INVALID}}
-  type=$(cat ${log_file} | grep ${type_regex} | head -1 | cut -d'=' -f2)
-
-  echo -n ${product}
-  if [ -n "${type}" ]; then
-    echo "-${type}"
-  fi
-}
-
-function checkParams() {
-  local target_path=$1
-  local product_name=$2
-
-  if [ $# -lt 2 ] || [ ! -d ${target_path} ] || \
-     [ ${product_name} == ${INVALID}  ]; then
-    echo ${INVALID}
-  else
-    echo ${VALID}
-  fi
-}
-
-function writeLog() {
-  local logs=$1
-  echo "${logs}"
-  echo "${logs}" >> ${PUSH_LOG}
-}
-
-function showError() {
-  local log_file=$1
-  echo "!!! error !!!"
-  grep -E "${ERROR_REGX}" ${log_file}
-}
-
-function showInstalled() {
-  local log_file=$1
-  echo "!!! install !!!"
-  grep -E "${INSTALL_REGX}" ${log_file}
+function helpUsage() {
+  echo    "Usage:"
+  echo    "    $0 [dir] [product name] [-a]?"
+  echo    "    - dir: path for build"
+  echo    "           e.g) hardware/qcom/camera"
+  echo    "    - product name: product string for mmm-build."
+  echo -n "                    If the product name is \"custom\", "
+  echo                        "we to execute the \"mmm-bat-custom.sh\" file."
+  echo    ""
+  echo    "  Optional:"
+  echo    "    - append mode(-a): To accumulate a push list."
 }
 
 function isError() {
@@ -108,13 +60,41 @@ function isError() {
   fi
 }
 
-function appendPushScriptHeader() {
-  echo "adb wait-for-device"
-  echo "adb remount"
-  echo "adb shell su -c setenforce 0"
+function writeLog() {
+  local logs=$1
+  echo "${logs}"
+  echo "${logs}" >> ${PUSH_LOG}
 }
 
-function genPushScriptInternal() {
+function showError() {
+  local log_file=$1
+  if [ $(isError ${log_file}) == "YES" ]; then
+    echo "!!! error !!!"
+    grep -E "${ERROR_REGX}" ${log_file}
+  fi
+}
+
+function showInstalled() {
+  local log_file=$1
+  echo "!!! install !!!"
+  grep -E "${INSTALL_REGX}" ${log_file}
+}
+
+function joinPushScript() {
+  local script_1=$1
+  local script_2=$2
+  genPushScriptHeader
+  echo "${script_1}" | grep -E "${PUSH_REGX}"
+  echo "${script_2}" | grep -E "${PUSH_REGX}"
+  genPushScriptTail
+}
+
+function genPushScriptTail() {
+  echo "adb shell sync"
+  echo "adb reboot"
+}
+
+function genPushScriptBody() {
   local log_file=$1
   if [ ! -f ${log_file} ]; then
     return
@@ -135,25 +115,22 @@ function genPushScriptInternal() {
   done
 }
 
-function appendPushScriptTail() {
-  echo "adb shell sync"
-  echo "adb reboot"
+function genPushScriptHeader() {
+  echo "adb wait-for-device"
+  echo "adb remount"
+  echo "adb shell su -c setenforce 0"
 }
 
-function genPushScript() {
-  local log_file=$1
-  appendPushScriptHeader
-  genPushScriptInternal ${log_file}
-  appendPushScriptTail
-}
+function checkParams() {
+  local target_path=$1
+  local product_name=$2
 
-function joinPushScript() {
-  local script_1=$1
-  local script_2=$2
-  appendPushScriptHeader
-  echo "${script_1}" | grep -E "${PUSH_REGX}"
-  echo "${script_2}" | grep -E "${PUSH_REGX}"
-  appendPushScriptTail
+  if [ $# -lt 2 ] || [ ! -d ${target_path} ] || \
+     [ ${product_name} == ${INVALID}  ]; then
+    echo ${INVALID}
+  else
+    echo ${VALID}
+  fi
 }
 
 function removeScriptFileIfEmpty() {
@@ -162,6 +139,32 @@ function removeScriptFileIfEmpty() {
   if [ ${num_push_cmd} == "0" ]; then
     rm -rf ${script_file}
   fi
+}
+
+function createErrorPushScriptIfNeed() {
+  local log_file=$1
+  local push_file=$2
+  if [ $(isError ${log_file}) == "YES" ]; then
+    cp ${push_file} ${ERROR_SCRIPT}
+  else
+    rm -rf ${ERROR_SCRIPT}
+  fi
+}
+
+function includeErrorPushScriptIfPossible() {
+  local push_file=$1
+  if [ -f ${ERROR_SCRIPT} ]; then
+    local temp_file=".temp-$(date +"%N").bat"
+    joinPushScript "$(cat ${push_file})" "$(cat ${ERROR_SCRIPT})" > ${temp_file}
+    mv ${temp_file} ${push_file}
+  fi
+}
+
+function genPushScript() {
+  local log_file=$1
+  genPushScriptHeader
+  genPushScriptBody ${log_file}
+  genPushScriptTail
 }
 
 function runBuild() {
@@ -178,62 +181,67 @@ function runBuild() {
   fi
 }
 
-function includeErrorPushScriptIfPossible() {
-  local push_file=$1
-  if [ -f ${ERROR_SCRIPT} ]; then
-    local temp_file=".temp-$(date +"%N").bat"
-    joinPushScript "$(cat ${push_file})" \
-                   "$(cat ${ERROR_SCRIPT})" > ${temp_file}
-    mv ${temp_file} ${push_file}
-  fi
-}
-
-function createErrorPushScriptIfNeed() {
-  local log_file=$1
-  local push_file=$2
-  local is_error=$(isError ${log_file})
-  if [ ${is_error} == "YES" ]; then
-    cp ${push_file} ${ERROR_SCRIPT}
-    writeLog "$(showError ${log_file})"
-  else
-    rm -rf ${ERROR_SCRIPT}
-  fi
-}
-
-function buildInternal() {
+function exitWhenInvalidParam() {
   local path=$1
   local product_name=$2
-  local log_file=$3
-  local push_file=$4
 
-  runBuild ${path} ${product_name} ${log_file}
-  genPushScript ${log_file} > ${push_file}
-  includeErrorPushScriptIfPossible ${push_file}
-  writeLog "$(showInstalled ${log_file})"
-  createErrorPushScriptIfNeed ${log_file} ${push_file}
-}
-
-function includePushScriptIfPossible() {
-  local push_file=$1
-  local include_push_file=$2
-
-  if [ ! -z "${include_push_file}" ]; then
-    # with append mode
-    local temp_push_file=".${log_file}-$(date +"%N").bat"
-    mv ${push_file} ${temp_push_file}
-    joinPushScript "$(cat ${temp_push_file})" \
-                   "$(cat ${include_push_file})" > ${push_file}
-    rm -rf ${temp_push_file}
+  if [ $(checkParams ${path} ${product_name}) == "INVALID" ]; then
+    helpUsage
+    exit -1
   fi
 }
 
 function build() {
   local path=$1
   local product_name=$2
-  local log_file=$3
-  local push_file=$4
-  local include_push_file=$5
+  local log_file=${3:-${BUILD_LOG_FILE}}
+  local push_file=${4:-${SCRIPT_FILE}}
 
-  buildInternal ${path} ${product_name} ${log_file} ${push_file}
-  includePushScriptIfPossible ${push_file} ${include_push_file}
+  exitWhenInvalidParam ${path} ${product_name}
+  runBuild ${path} ${product_name} ${log_file}
+  genPushScript ${log_file} > ${push_file}
+  includeErrorPushScriptIfPossible ${push_file}
+  createErrorPushScriptIfNeed ${log_file} ${push_file}
+  removeScriptFileIfEmpty ${push_file}
+  writeLog "$(showInstalled ${log_file})"
+  writeLog "$(showError ${log_file})"
+}
+
+function predictProductName() {
+  local log_file=${1:-${BUILD_LOG_FILE}}
+  local product_regex="TARGET_PRODUCT="
+  local type_regex="TARGET_BUILD_VARIANT="
+
+  product=$(cat ${log_file} | grep ${product_regex} | head -1 | cut -d'=' -f2)
+  product=${product:-${INVALID}}
+  type=$(cat ${log_file} | grep ${type_regex} | head -1 | cut -d'=' -f2)
+
+  echo -n ${product}
+  if [ -n "${type}" ]; then
+    echo "-${type}"
+  fi
+}
+
+function splitPathToRootAndTarget() {
+  local path=${1:-$(pwd)}
+  if [ $(echo ${path} | grep --count "/android/") -ge "1" ]; then
+    local splitted_path=${path//\/android\//\/android:}
+    echo ${splitted_path}
+  else
+    echo ${INVALID}
+  fi
+}
+
+function getTargetPath() {
+  local path=$1
+  echo $(splitPathToRootAndTarget ${path}) | cut -d':' -f2
+}
+
+function getRootPath() {
+  local path=$1
+  if [ "$(basename ${path})" == "android" ]; then
+    echo ${path}
+  else
+    echo $(splitPathToRootAndTarget ${path}) | cut -d':' -f1
+  fi
 }

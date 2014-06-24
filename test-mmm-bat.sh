@@ -267,7 +267,7 @@ function testBuildAfterError() {
   rm -rf ${ERROR_SCRIPT}
 }
 
-function testBuildWithAppendMode() {
+function _testBuildWithAppendMode() {
   # set up
   local log_file='temp-log-file'
   local push_file='temp-push-script'

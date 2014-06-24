@@ -12,69 +12,47 @@
 
 . mmm-bat.sh
 
+#
+# Variables
+#
+
 # configureations
-build_log_file="mmm.log"
-script_file="push.bat"
+BUILD_LOG_FILE="mmm.log"
+CUR_DIR=$(pwd)
+SCRIPT_FILE="push.bat"
+
 
 #
 # functions
 #
-function helpUsage() {
-  echo    "Usage:"
-  echo    "    $0 [dir] [product name] [-a]?"
-  echo    "    - dir: path for build"
-  echo    "           e.g) hardware/qcom/camera"
-  echo    "    - product name: product string for mmm-build."
-  echo -n "                    If the product name is \"custom\", "
-  echo                        "we to execute the \"mmm-bat-custom.sh\" file."
-  echo    ""
-  echo    "  Optional:"
-  echo    "    - append mode(-a): To accumulate a push list."
+
+function restoreCurDir() {
+  cd ${CUR_DIR}
 }
 
-# change working dir
-cur_dir=`pwd`
-root_dir=$(getRootPath ${cur_dir})
-if [ ! -d ${root_dir} ]; then
-  echo "Can not find the Android directory."
-  echo "-  [DEBUG] cur_dir: \"${cur_dir:}\""
-  echo "-  [DEBUG] root_path: \"${root_path}\""
-  echo ""
-  helpUsage
-  exit -1
-else
-  # for mmm-build
+function main() {
+  local target_path=$(getTargetPath "${CUR_DIR}/${1}")
+  local product_name=${2:-$(predictProductName)}
+
+  writeLog "---------------------------------------------------------------------"
+  writeLog "Date: $(date)"
+  writeLog "Product: ${product_name}"
+  writeLog "Path: ${target_path}"
+
+  build ${target_path} ${product_name} ${BUILD_LOG_FILE} ${SCRIPT_FILE}
+}
+
+function changeCurDirToAndroid
+  local root_dir=$(getRootPath ${CUR_DIR})
+  if [ ! -d ${root_dir} ]; then
+    echo "Can not find the Android directory."
+    echo "-  [DEBUG] cur_dir: \"${CUR_DIR}\""
+    echo "-  [DEBUG] root_dir: \"${root_dir}\""
+    exit -1
+  fi
   cd ${root_dir}
-fi
+}
 
-# init
-relative_target_path=$1
-product_name=${2:-$(predictProductName)}
-is_accumulation_mode=$3
-
-# adjust target path.
-target_path=$(getTargetPath "${cur_dir}/${relative_target_path}")
-
-# check param
-is_valid=$(checkParams ${target_path} ${product_name})
-if [ ${is_valid} == "INVALID" ]; then
-  helpUsage
-  exit -1
-fi
-
-# log header
-writeLog "---------------------------------------------------------------------"
-writeLog "Date: $(date)"
-writeLog "Product: ${product_name}"
-writeLog "Path: ${target_path}"
-writeLog "Build directory ${cur_dir}"
-
-# build & generate push script
-if [ -z "${is_accumulation_mode}" ]; then
-  build ${target_path} ${product_name} ${build_log_file} ${script_file}
-else
-  build ${target_path} ${product_name} ${build_log_file} ${script_file} ${script_file}
-fi
-
-# return current directory
-cd ${cur_dir}
+changeCurDirToAndroid
+main $1 $2 || restoreCurDir
+restoreCurDir
