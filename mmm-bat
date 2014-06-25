@@ -42,7 +42,7 @@ function main() {
   build ${target_path} ${product_name} ${BUILD_LOG_FILE} ${SCRIPT_FILE}
 }
 
-function changeCurDirToAndroid
+function changeCurDirToAndroid() {
   local root_dir=$(getRootPath ${CUR_DIR})
   if [ ! -d ${root_dir} ]; then
     echo "Can not find the Android directory."
