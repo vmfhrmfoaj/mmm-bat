@@ -24,273 +24,197 @@ function oneTimeTearDown() {
 }
 
 function testIfThereAreNotEnoughParms() {
-  # set up
-  local target_dir=`pwd`
-
-  # exercise
-  local is_valid=$(checkParams ${target_dir})
-
-  # verify
-  assertEquals "INVALID" ${is_valid}
+  # exercise & verify
+  assertEquals ${INVALID} $(checkParams $(pwd))
 }
 
 function testNonExistingTargetDirectory() {
-  # set up
-  local target_dir="bad-dir"
-  local product_name="test"
-
-  # exercise
-  local is_valid=$(checkParams ${target_dir} ${product_name})
-
-  # verify
-  assertEquals "INVALID" ${is_valid}
+  # exercise & verify
+  assertEquals ${INVALID} $(checkParams "DIR" "PRODUCT")
 }
 
 function testInvalidProductName() {
-  # set up
-  local target_dir=`pwd`
-  local product_name=${invalid_product_name}
-
-  # exercise
-  local is_valid=$(checkParams ${dir} ${product_name})
-
-  # verify
-  assertEquals "INVALID" ${is_valid}
+  # exercise & verify
+  assertEquals ${INVALID} $(checkParams $(pwd) ${INVALID})
 }
 
-
-function testNormalParam() {
-  # set up
-  local target_dir=`pwd`
-  local product_name="test"
-
-  # exercise
-  local is_valid=$(checkParams ${target_dir} ${product_name})
-
-  # verify
-  assertEquals "VALID" ${is_valid}
+function testParam() {
+  # exercise & verify
+  assertEquals ${VALID} $(checkParams $(pwd) "test")
 }
 
 function testCheckBuildErrorWithNoErrorLog() {
   # set up
-  local temp_no_error_log_file="temp-no-error-log-file"
-  echo "${no_error_log}" > ${temp_no_error_log_file}
+  local temp_file="temp-no-error-log-file"
+  echo "${no_error_log}" > ${temp_file}
 
-  # exercise
-  local is_error=$(isError ${temp_no_error_log_file})
-
-  # verify
-  assertEquals "NO" ${is_error}
+  # exercise & verify
+  assertEquals ${NO} $(isError ${temp_file})
 
   # tear down
-  rm -rf ${temp_no_error_log_file}
+  rm -rf ${temp_file}
 }
 
 function testCheckBuildErrorWithErrorLog() {
   # set up
-  local temp_error_log_file="temp-error-log-file"
-  echo "${error_log}" > ${temp_error_log_file}
+  local temp_file="temp-error-log-file"
+  echo "${error_log}" > ${temp_file}
 
-  # exercise
-  local is_error=$(isError ${temp_error_log_file})
-
-  # verify
-  assertEquals "YES" ${is_error}
+  # exercise & verify
+  assertEquals ${YES} $(isError ${temp_file})
 
   # tear down
-  rm -rf ${temp_error_log_file}
+  rm -rf ${temp_file}
 }
 
 function testGeneratePushScript() {
   # set up
-  local temp_install_log_file="temp-install-log-file"
-  echo "${install_log}" > ${temp_install_log_file}
+  local temp_file="temp-install-log-file"
+  echo "${normal_log}" > ${temp_file}
 
   # exercise
-  local push_script=$(genPushScript ${temp_install_log_file})
+  local push_script=$(genPushScript ${temp_file})
 
   # verify
-  local diff=$(diff -c <(echo "${push_script_for_install_log}") \
-                       <(echo "${push_script}"))
-
-  assertTrue "${diff}" \
-    "[ \"${push_script_for_install_log}\" == \"${push_script}\" ]"
+  local diff=$(diff -c <(echo "${normal_log_sh}") <(echo "${push_script}"))
+  assertTrue "${diff}" "[ \"${normal_log_sh}\" == \"${push_script}\" ]"
 
   # tear down
-  rm -rf ${temp_install_log_file}
+  rm -rf ${temp_file}
 }
 
 function testGeneratePushScriptWithError() {
   # set up
-  local temp_error_log_file="temp-error-log-file"
-  echo "${error_log}" > ${temp_error_log_file}
+  local temp_file="temp-error-log-file"
+  echo "${error_log}" > ${temp_file}
 
   # exercise
-  local push_script=$(genPushScript ${temp_error_log_file})
+  local push_script=$(genPushScript ${temp_file})
 
   # verify
-  local diff=$(diff -c <(echo "${push_script_for_error_log}" ) \
-                       <(echo "${push_script}"))
-  assertTrue "${diff}" \
-    "[ \"${push_script_for_error_log}\" == \"${push_script}\" ]"
+  local diff=$(diff -c <(echo "${error_log_sh}" ) <(echo "${push_script}"))
+  assertTrue "${diff}" "[ \"${error_log_sh}\" == \"${push_script}\" ]"
 
   # tear down
-  rm -rf ${temp_error_log_file}
+  rm -rf ${temp_file}
 }
 
 function testJoinPushScript() {
   # exercise
-  local push_script=$(joinPushScript "${push_script_for_install_log}" \
-                                     "${push_script_for_no_error_log}")
+  local push_script=$(joinPushScript "${normal_log_sh}" "${no_error_log_sh}")
 
   # verify
-  local diff=$(diff -c <(echo "${append_push_script}") <(echo "${push_script}"))
-  assertTrue "${diff}" "[ \"${append_push_script}\" == \"${push_script}\" ]"
+  local diff=$(diff -c <(echo "${joined_sh}") <(echo "${push_script}"))
+  assertTrue "${diff}" "[ \"${joined_sh}\" == \"${push_script}\" ]"
 }
 
 function testJoinPushScriptWithFiles_1() {
-  # set up
-  local input_1="temp_1"
-  local input_2="temp_2"
-  local output="temp_1"
-
-  echo "${push_script_for_install_log}" > ${input_1}
-  echo "${push_script_for_no_error_log}" > ${input_2}
-
   # exercise
-  joinPushScript "$(cat ${input_1})" "$(cat ${input_2})" > ${output}
+  local push_script=$(joinPushScript "${normal_log_sh}" "${no_error_log_sh}")
 
   # verify
-  local push_script=$(cat ${output})
-  local diff=$(diff -c <(echo "${append_push_script}") <(echo "${push_script}"))
-  assertTrue "${diff}" "[ \"${append_push_script}\" == \"${push_script}\" ]"
-
-  # tear down
-  rm -rf ${input_1}
-  rm -rf ${input_2}
-  rm -rf ${output}
+  local diff=$(diff -c <(echo "${joined_sh}") <(echo "${push_script}"))
+  assertTrue "${diff}" "[ \"${joined_sh}\" == \"${push_script}\" ]"
 }
 
 function testJoinPushScriptWithFiles_2() {
-  # set up
-  local input_1="temp_1"
-  local input_2="temp_2"
-  local output="temp_2"
-
-  echo "${push_script_for_install_log}" > ${input_1}
-  echo "${push_script_for_no_error_log}" > ${input_2}
-
   # exercise
-  joinPushScript "$(cat ${input_1})" "$(cat ${input_2})" > ${output}
+  local push_script=$(joinPushScript "${normal_log_sh}" "${no_error_log_sh}")
 
   # verify
-  local push_script=$(cat ${output})
-  local diff=$(diff -c <(echo "${append_push_script}") <(echo "${push_script}"))
-  assertTrue "${diff}" "[ \"${append_push_script}\" == \"${push_script}\" ]"
-
-  # tear down
-  rm -rf ${input_1}
-  rm -rf ${input_2}
-  rm -rf ${output}
+  local diff=$(diff -c <(echo "${joined_sh}") <(echo "${push_script}"))
+  assertTrue "${diff}" "[ \"${joined_sh}\" == \"${push_script}\" ]"
 }
 
 function testChangeModeForBinaryFiles() {
   # set up
-  local temp_bin_log_file="temp-bin-log-file"
-  echo "${binary_log}" > ${temp_bin_log_file}
+  local temp_file="temp-bin-log-file"
+  echo "${binary_log}" > ${temp_file}
 
   # exercise
-  local push_script=$(genPushScript ${temp_bin_log_file})
+  local push_script=$(genPushScript ${temp_file})
 
   # verify
-  local diff=$(diff -c <(echo "${push_script_for_binary_log}" ) \
-                       <(echo "${push_script}"))
-
-  assertTrue "${diff}" \
-    "[ \"${push_script_for_binary_log}\" == \"${push_script}\" ]"
+  local diff=$(diff -c <(echo "${binary_log_sh}" ) <(echo "${push_script}"))
+  assertTrue "${diff}" "[ \"${binary_log_sh}\" == \"${push_script}\" ]"
 
   # tear down
-  rm -rf ${temp_bin_log_file}
+  rm -rf ${temp_file}
 }
 
 function testRemoveScriptFileIfEmtpy() {
   # set up
-  local temp_script_file1="temp-script-file-1"
-  local temp_install_log_file="temp-install-log-file"
-  echo "${install_log}" > ${temp_install_log_file}
-  genPushScript ${temp_install_log_file} > ${temp_script_file1}
+  local temp_file_1="temp-install-log-file"
+  local temp_file_2="temp-script-file-1"
+  echo "${normal_log}" > ${temp_file_1}
+  genPushScript ${temp_file_1} > ${temp_file_2}
 
-  local temp_script_file2="temp-script-file-2"
-  local temp_no_install_log_file="temp-no-install-log-file"
-  echo "${no_install_log}" > ${temp_no_install_log_file}
-  genPushScript ${temp_no_install_log_file} > ${temp_script_file2}
+  local temp_file_3="temp-no-install-log-file"
+  local temp_file_4="temp-script-file-2"
+  echo "${no_install_log}" > ${temp_file_3}
+  genPushScript ${temp_file_3} > ${temp_file_4}
 
   # exercise & verify
-  removeScriptFileIfEmpty ${temp_script_file1}
-  assertTrue "not existing ${temp_script_file1}" \
-    "[ -f \"${temp_script_file1}\" ]"
+  removeScriptFileIfEmpty ${temp_file_2}
+  assertTrue "not existing ${temp_file_2}" "[ -f \"${temp_file_2}\" ]"
 
-  removeScriptFileIfEmpty ${temp_script_file2}
-  assertFalse "existing ${temp_script_file2}" "[ -f \"${temp_script_file2}\" ]"
+  removeScriptFileIfEmpty ${temp_file_4}
+  assertFalse "existing ${temp_file_4}" "[ -f \"${temp_file_4}\" ]"
 
   # tear down
-  rm -rf ${temp_script_file1}
-  rm -rf ${temp_script_file2}
-  rm -rf ${temp_install_log_file}
-  rm -rf ${temp_no_install_log_file}
+  rm -rf ${temp_file_1}
+  rm -rf ${temp_file_2}
+  rm -rf ${temp_file_3}
+  rm -rf ${temp_file_4}
 }
 
 function testShowErrorMessage() {
   # set up
-  local temp_error_log_file="temp-error-log-file"
-  echo "${error_log}" > ${temp_error_log_file}
+  local temp_file="temp-error-log-file"
+  echo "${error_log}" > ${temp_file}
 
   # exercise
-  local err_msg=$(showError ${temp_error_log_file})
+  local err_msg=$(showError ${temp_file})
 
   # verify
-  local diff=$(diff -c <(echo "${err_msg_for_error_log}" ) <(echo "${err_msg}"))
-  assertTrue "${diff}" "[ \"${err_msg_for_error_log}\" == \"${err_msg}\" ]"
+  local diff=$(diff -c <(echo "${error_log_err_msg}" ) <(echo "${err_msg}"))
+  assertTrue "${diff}" "[ \"${error_log_err_msg}\" == \"${err_msg}\" ]"
 
   # tear down
-  rm -rf ${temp_error_log_file}
+  rm -rf ${temp_file}
 }
 
 function testShowInstallMessage() {
   # set up
-  local temp_error_log_file="temp-error-log-file"
-  echo "${error_log}" > ${temp_error_log_file}
+  local temp_file="temp-error-log-file"
+  echo "${error_log}" > ${temp_file}
 
   # exercise
-  local install_msg=$(showInstalled ${temp_error_log_file})
+  local install_msg=$(showInstalled ${temp_file})
 
   # verify
-  local diff=$(diff -c <(echo "${install_msg_for_error_log}" ) \
+  local diff=$(diff -c <(echo "${error_log_install_msg}" ) \
                        <(echo "${install_msg}"))
 
-  assertTrue "${diff}" \
-    "[ \"${install_msg_for_error_log}\" == \"${install_msg}\" ]"
+  assertTrue "${diff}" "[ \"${error_log_install_msg}\" == \"${install_msg}\" ]"
 
   # tear down
-  rm -rf ${temp_error_log_file}
+  rm -rf ${temp_file}
 }
 
 function testBuild() {
   # set up
   local log_file='temp-log-file'
   local push_file='temp-push-script'
-  local mmm_log=${install_log}
+  local mmm_log=${normal_log}
 
   # exercise
   build . 'test' ${log_file} ${push_file} > /dev/null
 
   # verify
   local push_script=$(cat ${push_file})
-  local diff=$(diff -c <(echo "${push_script_for_install_log}" ) \
-                       <(echo "${push_script}"))
-
-  assertTrue "${diff}" \
-    "[ \"${push_script_for_install_log}\" == \"${push_script}\" ]"
+  local diff=$(diff -c <(echo "${normal_log_sh}" ) <(echo "${push_script}"))
+  assertTrue "${diff}" "[ \"${normal_log_sh}\" == \"${push_script}\" ]"
 
   # tear down
   rm -rf ${log_file}
@@ -308,62 +232,57 @@ function testBuildWithError() {
 
   # verify
   local push_script=$(cat ${push_file})
-  local diff=$(diff -c <(echo "${push_script_for_error_log}" ) \
-                       <(echo "${push_script}"))
-
-  assertTrue "${diff}" \
-    "[ \"${push_script_for_error_log}\" == \"${push_script}\" ]"
-  assertTrue "not existing ${error_script_file}" \
-    "[ -f \"${error_script_file}\" ]"
+  local diff=$(diff -c <(echo "${error_log_sh}" ) <(echo "${push_script}"))
+  assertTrue "${diff}" "[ \"${error_log_sh}\" == \"${push_script}\" ]"
+  assertTrue "not existing ${ERROR_SCRIPT}" "[ -f \"${ERROR_SCRIPT}\" ]"
 
   # tear down
   rm -rf ${log_file}
   rm -rf ${push_file}
-  rm -rf ${error_script_file}
+  rm -rf ${ERROR_SCRIPT}
 }
 
 function testBuildAfterError() {
   # set up
   local log_file='temp-log-file'
   local push_file='temp-push-script'
-  local mmm_log=${install_log}
+  local mmm_log=${normal_log}
 
-  echo "${push_script_for_error_log}" > ${error_script_file}
+  echo "${error_log_sh}" > ${ERROR_SCRIPT}
 
   # exercise
   build . 'test' ${log_file} ${push_file} > /dev/null
 
   # verify
   local push_script=$(cat ${push_file})
-  local diff=$(diff -c <(echo "${push_script_for_install_error_log}" ) \
+  local diff=$(diff -c <(echo "${install_error_log_sh}" ) \
                        <(echo "${push_script}"))
 
-  assertTrue "${diff}" \
-    "[ \"${push_script_for_install_error_log}\" == \"${push_script}\" ]"
-  assertFalse "existing ${error_script_file}" "[ -f \"${error_script_file}\" ]"
+  assertTrue "${diff}" "[ \"${install_error_log_sh}\" == \"${push_script}\" ]"
+  assertFalse "existing ${ERROR_SCRIPT}" "[ -f \"${ERROR_SCRIPT}\" ]"
 
   # tear down
   rm -rf ${log_file}
   rm -rf ${push_file}
-  rm -rf ${error_script_file}
+  rm -rf ${ERROR_SCRIPT}
 }
 
-function testBuildWithAppendMode() {
+function _testBuildWithAppendMode() {
   # set up
   local log_file='temp-log-file'
   local push_file='temp-push-script'
   local append_file='temp-push-spcript'
-  local mmm_log=${install_log}
+  local mmm_log=${normal_log}
 
-  echo "${push_script_for_no_error_log}" > ${append_file}
+  echo "${no_error_log_sh}" > ${append_file}
 
   # exercise
   build . 'test' ${log_file} ${push_file} ${append_file} > /dev/null
 
   # verify
   local push_script=$(cat ${push_file})
-  local diff=$(diff -c <(echo "${append_push_script}") <(echo "${push_script}"))
-  assertTrue "${diff}" "[ \"${append_push_script}\" == \"${push_script}\" ]"
+  local diff=$(diff -c <(echo "${joined_sh}") <(echo "${push_script}"))
+  assertTrue "${diff}" "[ \"${joined_sh}\" == \"${push_script}\" ]"
 
   # tear down
   rm -rf ${log_file}
@@ -377,19 +296,19 @@ function testCustomBuild() {
   local push_file='temp-push-script'
   local check_param_file='temp-check-param'
 
-  echo "echo \$1 > ${check_param_file}" > ${custom_build_command}
-  echo "echo \"${install_log}\"" >> ${custom_build_command}
+  echo "echo \$1 > ${check_param_file}" > ${CUSTOM_BUILD}
+  echo "echo \"${normal_log}\"" >> ${CUSTOM_BUILD}
 
   # exercise
   build . 'custom' ${log_file} ${push_file} > /dev/null
 
   # verify
   local push_script=$(cat ${push_file})
-  local diff=$(diff -c <(echo "${push_script_for_install_log}" ) \
+  local diff=$(diff -c <(echo "${normal_log_sh}" ) \
                        <(echo "${push_script}"))
 
   assertTrue "${diff}" \
-    "[ \"${push_script_for_install_log}\" == \"${push_script}\" ]"
+    "[ \"${normal_log_sh}\" == \"${push_script}\" ]"
 
   local diff=$(diff -c <(echo ".") "${check_param_file}")
   assertTrue "${diff}" \
@@ -398,7 +317,7 @@ function testCustomBuild() {
   # tear down
   rm -rf ${log_file}
   rm -rf ${push_file}
-  rm -rf ${custom_build_command}
+  rm -rf ${CUSTOM_BUILD}
   rm -rf ${check_param_file}
 }
 
@@ -407,21 +326,15 @@ function testGetRootPath() {
   local path="/home/user/project/android/a/b/c"
   local expected="/home/user/project/android"
 
-  # exercise
-  res=$(getRootPath ${path})
-
-  # verify
-  assertEquals ${expected} ${res}
+  # exercise & verify
+  assertEquals ${expected} $(getRootPath ${path})
 
   # set up
   local path="/home/user/project/no-android/a/b/c"
-  local expected="BAD-PATH"
+  local expected=${INVALID}
 
-  # exercise
-  res=$(getRootPath ${path})
-
-  # verify
-  assertEquals ${expected} ${res}
+  # exercise & verify
+  assertEquals ${expected} $(getRootPath ${path})
 }
 
 function testGetTargetPath() {
@@ -429,21 +342,15 @@ function testGetTargetPath() {
   local path="/home/user/project/android/a/b/c"
   local expected="a/b/c"
 
-  # exercise
-  res=$(getTargetPath ${path})
-
-  # verify
-  assertEquals ${expected} ${res}
+  # exercise & verify
+  assertEquals ${expected} $(getTargetPath ${path})
 
   # set up
   local path="/home/user/project/no-android/a/b/c"
-  local expected="BAD-PATH"
-
-  # exercise
-  res=$(getTargetPath ${path})
+  local expected=${INVALID}
 
   # verify
-  assertEquals ${expected} ${res}
+  assertEquals ${expected} $(getTargetPath ${path})
 }
 
 function testPredictProductName() {
@@ -455,15 +362,10 @@ function testPredictProductName() {
   echo "${mmm_log_2}" > ${log_2}
   echo "not-contain-product-name-hint" > ${log_3}
 
-  # exercise
-  product_name=$(predictProductName ${log})
-  product_name_2=$(predictProductName ${log_2})
-  product_name_3=$(predictProductName ${log_3})
-
-  # verify
-  assertEquals "XXX-YYY" ${product_name}
-  assertEquals "XXX" ${product_name_2}
-  assertEquals ${invalid_product_name} ${product_name_3}
+  # exercise & verify
+  assertEquals "XXX-YYY" $(predictProductName ${log})
+  assertEquals "XXX" $(predictProductName ${log_2})
+  assertEquals ${INVALID} $(predictProductName ${log_3})
 
   # tear down
   rm -rf ${log}
