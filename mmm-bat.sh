@@ -172,7 +172,7 @@ function runBuild() {
   local product_name=$2
   local log_file=$3
 
-  if [ ${product_name} == "custom" ]; then
+  if [ -f ${CUSTOM_BUILD} ]; then
     bash ${CUSTOM_BUILD} ${path} 2>&1 | tee ${log_file}
   else
     source build/envsetup.sh
